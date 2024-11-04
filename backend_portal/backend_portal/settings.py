@@ -37,7 +37,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'join_data_app',
+    'users_app',
+    'authentication_app',
+    'tickets_app',
     'rest_framework',
     'corsheaders',
 ]
