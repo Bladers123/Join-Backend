@@ -1,4 +1,8 @@
-# authentication/serializers.py
+# serializers.py
+
+
+
+
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from profile_app.models import Profile
@@ -14,9 +18,16 @@ class RegisterSerializer(serializers.ModelSerializer):
     def validate_username(self, value):
         # Erlaubt Leerzeichen im Benutzernamen, entfernt führende und nachgestellte Leerzeichen
         value = value.strip()
+        
+        # Benutzername darf nicht leer sein
         if not value:
             raise serializers.ValidationError("Username shouldn't be empty.")
+        
+        # Prüfen, ob der Benutzername bereits existiert
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError("This username is already taken.")
         return value
+
     
     def validate_email(self, value):
         """
