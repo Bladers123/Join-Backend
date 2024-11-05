@@ -6,6 +6,12 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from profile_app.models import Profile
+from rest_framework import serializers
+from django.contrib.auth import authenticate
+from rest_framework.authtoken.models import Token
+
+
+
 
 class RegisterSerializer(serializers.ModelSerializer):
     username = serializers.CharField()  # Überschreibt das username-Feld mit eigener Validierung
@@ -46,3 +52,26 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
         Profile.objects.create(user=user)  # Profil für den Benutzer erstellen
         return user
+
+
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        email = data.get("email")
+        password = data.get("password")
+
+        try:
+            # Benutzer anhand der E-Mail finden
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("Invalid email or password.")
+        
+        # Authentifizieren mit Benutzername (von user) und Passwort
+        user = authenticate(username=user.username, password=password)
+        if user is None:
+            raise serializers.ValidationError("Invalid email or password.")
+        
+        data['user'] = user
+        return data
