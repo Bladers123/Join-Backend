@@ -17,6 +17,14 @@ class RegisterSerializer(serializers.ModelSerializer):
         if not value:
             raise serializers.ValidationError("Username shouldn't be empty.")
         return value
+    
+    def validate_email(self, value):
+        """
+        Prüft, ob die E-Mail-Adresse bereits verwendet wird.
+        """
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("This e-mail address is already in use.")
+        return value
 
     def create(self, validated_data):
         # Benutzer erstellen, Leerzeichen im Benutzernamen sind erlaubt
