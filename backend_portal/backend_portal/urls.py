@@ -21,4 +21,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/tickets/', include('tickets_app.api.urls')),
     path('api/auth/', include('authentication_app.api.urls')),
+    path('api-auth', include('rest_framework.urls'))    # login in header
 ]
