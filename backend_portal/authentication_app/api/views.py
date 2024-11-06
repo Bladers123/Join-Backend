@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAdminUser, AllowAny
 from rest_framework.authtoken.models import Token
-from .serializers import RegisterSerializer, LoginSerializer
+from .serializers import RegisterSerializer, LoginSerializer, UserOverviewSerializer
 from django.contrib.auth import get_user_model
 
 
@@ -28,7 +28,7 @@ class RegisterView(APIView):
 
     def get(self, request, *args, **kwargs):
         users = User.objects.all()  # Alle Benutzer aus der Datenbank abrufen
-        serializer = RegisterSerializer(users, many=True)  # Serializer für mehrere Benutzer
+        serializer = UserOverviewSerializer(users, many=True)  # Serializer für mehrere Benutzer
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
@@ -50,9 +50,9 @@ class LoginAPIView(APIView):
         return [AllowAny()]  # POST ist für alle zugänglich
     
     def get(self, request, *args, **kwargs):
-        users = User.objects.all()  # Alle Benutzer aus der Datenbank abrufen
-        serializer = RegisterSerializer(users, many=True)  # Serializer für mehrere Benutzer
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        users = User.objects.all()
+        serializer = UserOverviewSerializer(users, many=True)
+        return Response(serializer.data)
     
     def post(self, request, *args, **kwargs):
         serializer = LoginSerializer(data=request.data)
