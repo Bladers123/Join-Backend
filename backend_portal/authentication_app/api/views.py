@@ -18,10 +18,6 @@ User = get_user_model()
 class RegisterView(APIView):
 
     def get_permissions(self):
-        """
-        Erlaubt den Zugriff auf GET nur für Admins und Staff-Benutzer.
-        POST ist für alle zugänglich.
-        """
         if self.request.method == 'GET':
             return [IsAdminUser()]  # Nur Admins und Staff-Benutzer dürfen GET verwenden
         return [AllowAny()]  # POST ist für alle zugänglich
