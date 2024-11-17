@@ -12,18 +12,6 @@ class ContactSerializer(serializers.ModelSerializer):
         model = Contact
         fields = ['id', 'name', 'email', 'number', 'backgroundColor', 'isSelected']
 
-
-class ProfileSerializer(serializers.ModelSerializer):
-    # ticket = TicketSerializer(many=True)  
-    contacts = ContactSerializer(many=True)  
-
-    class Meta:
-        model = Profile
-        fields =  '__all__'
-
-
-from rest_framework import serializers
-
 class AssignedSerializer(serializers.ModelSerializer):
     class Meta:
         model = Assigned
@@ -41,3 +29,15 @@ class TicketSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ticket
         fields = '__all__'
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    tickets = TicketSerializer(many=True)  
+    contacts = ContactSerializer(many=True)  
+
+    class Meta:
+        model = Profile
+        fields =  '__all__'
+
+
+

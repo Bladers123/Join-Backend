@@ -1,7 +1,7 @@
 # profile_app/api/urls.py
 
 from django.urls import path
-from .views import ProfileDetailView, AssigendContactsView, AssignedContactDetailView, AssignedTicketsView, AssignedTicketsDetailView
+from .views import AssignedContactDetailView, AssignedTicketsDetailView, AssignedTicketsView, ProfileDetailView, AssigendContactsView
 
 urlpatterns = [
     path('', ProfileDetailView.as_view(), name='profile-detail'),
@@ -9,5 +9,4 @@ urlpatterns = [
     path('contacts/<int:pk>/', AssignedContactDetailView.as_view(), name='contact-detail'),
     path('tickets/', AssignedTicketsView.as_view(), name='tickets'),
     path('tickets/<int:pk>/', AssignedTicketsDetailView.as_view(), name='ticket-detail')
-
 ]

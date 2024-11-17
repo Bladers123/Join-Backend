@@ -99,14 +99,59 @@ class AssignedTicketsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        try:
-            # Filtere Tickets basierend auf dem Benutzernamen
-            tickets = Ticket.objects.filter(assigned_to__name=request.user.username)
-            serializer = TicketSerializer(tickets, many=True)
-            return Response(serializer.data)
-        except Ticket.DoesNotExist:
-            raise NotFound("Tickets not found")
+        # Stelle sicher, dass das Profil existiert
+        profile, created = Profile.objects.get_or_create(user=request.user)
+        
+        # Erstelle ein Ticket, falls keines existiert
+        if not profile.ticket.exists():
+            ticket = Ticket.objects.create(
+                title="Standard Ticket",  # Platzhalter-Titel
+                description="Standardbeschreibung",  # Platzhalter-Beschreibung
+                priority="Low",  # Standard-Priorität
+                category="General",  # Standard-Kategorie
+                progress="To Do"  # Standard-Fortschritt
+            )
+            profile.ticket.add(ticket)  # Verknüpfe das Ticket mit dem Profil
+
+        # Hole alle Tickets, die mit dem Profil verknüpft sind
+        tickets = profile.ticket.all()
+        serializer = TicketSerializer(tickets, many=True)
+        return Response(serializer.data)
+    
 
 class AssignedTicketsDetailView(APIView):
-    queryset = Ticket.objects.all()
-    serializer_class = TicketSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            ticket = Ticket.objects.get(pk=pk)
+            serializer = TicketSerializer(ticket)
+            return Response(serializer.data)
+        except Ticket.DoesNotExist:
+            return Response({"error": "Ticket not found"}, status=404)
+
+    def put(self, request, pk):
+        try:
+            ticket = Ticket.objects.get(pk=pk)
+        except Ticket.DoesNotExist:
+            return Response({"error": "Ticket not found"}, status=404)
+
+        serializer = TicketSerializer(ticket, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=200)
+        return Response(serializer.errors, status=400)
+
+    def delete(self, request, pk):
+        try:
+            ticket = Ticket.objects.get(pk=pk)
+        except Ticket.DoesNotExist:
+            return Response({"error": "Ticket not found"}, status=404)
+
+        profile = Profile.objects.get(user=request.user)
+        profile.ticket.remove(ticket)
+
+        if not Profile.objects.filter(ticket=ticket).exists():
+            ticket.delete()
+
+        return Response({"message": "Ticket deleted successfully"}, status=204)
