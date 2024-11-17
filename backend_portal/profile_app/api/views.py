@@ -28,14 +28,9 @@ class AssigendContactsView(APIView):
 
     def get(self, request):
         # Profil des aktuellen Nutzers abrufen
-        try:
-            profile = Profile.objects.get(user=request.user)
-        except Profile.DoesNotExist:
-            return Response({"error": "Profile does not exist"}, status=404)
-
+        profile = Profile.objects.get(user=request.user)
         # Kontakte des Profils abrufen
         contacts = profile.contacts.all()
-
         # Kontakte serialisieren
         serializer = ContactSerializer(contacts, many=True)
         return Response(serializer.data)
@@ -99,24 +94,21 @@ class AssignedTicketsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # Stelle sicher, dass das Profil existiert
-        profile, created = Profile.objects.get_or_create(user=request.user)
-        
-        # Erstelle ein Ticket, falls keines existiert
-        if not profile.ticket.exists():
-            ticket = Ticket.objects.create(
-                title="Standard Ticket",  # Platzhalter-Titel
-                description="Standardbeschreibung",  # Platzhalter-Beschreibung
-                priority="Low",  # Standard-Priorität
-                category="General",  # Standard-Kategorie
-                progress="To Do"  # Standard-Fortschritt
-            )
-            profile.ticket.add(ticket)  # Verknüpfe das Ticket mit dem Profil
-
-        # Hole alle Tickets, die mit dem Profil verknüpft sind
-        tickets = profile.ticket.all()
-        serializer = TicketSerializer(tickets, many=True)
+        profile = Profile.objects.get(user=request.user)
+        tickets = profile.tickets.all()  # Zugriff auf das ManyToManyField 'ticket'
+        serializer = TicketSerializer(tickets, many=True)  # Verwende den passenden Serializer
         return Response(serializer.data)
+
+    def post(self, request):
+        serializer = TicketSerializer(data=request.data)
+        if serializer.is_valid():
+            ticket = serializer.save()
+            # Kontakt dem Profil des aktuellen Nutzers hinzufügen
+            profile, created = Profile.objects.get_or_create(user=request.user)
+            profile.tickets.add(ticket)  # Verknüpfen
+            profile.save()  # Speichern
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
     
 
 class AssignedTicketsDetailView(APIView):

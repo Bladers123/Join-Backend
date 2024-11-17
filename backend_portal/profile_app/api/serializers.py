@@ -15,20 +15,41 @@ class ContactSerializer(serializers.ModelSerializer):
 class AssignedSerializer(serializers.ModelSerializer):
     class Meta:
         model = Assigned
-        fields = '__all__'
+        fields = ['name', 'backgroundColor']
 
 class SubtaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subtask
-        fields = '__all__'
+        fields = ['title', 'completed', 'subtask_id']
 
 class TicketSerializer(serializers.ModelSerializer):
-    assigned_to = AssignedSerializer(many=True)
-    subtasks = SubtaskSerializer(many=True)
+    subtasks = SubtaskSerializer(many=True)  # Nested Serializer für Subtasks
+    assignedTo = AssignedSerializer(many=True)  # Nested Serializer für AssignedTo
 
     class Meta:
         model = Ticket
-        fields = '__all__'
+        fields = [
+            'id', 'title', 'description', 'dueDate', 'priority', 'category', 'progress', 'subtasks', 'assignedTo'
+        ]
+
+    def create(self, validated_data):
+        # Subtasks und Assigned werden aus den Daten extrahiert
+        subtasks_data = validated_data.pop('subtasks', [])
+        assigned_data = validated_data.pop('assignedTo', [])
+        
+        # Ticket erstellen
+        ticket = Ticket.objects.create(**validated_data)
+        
+        # Subtasks erstellen und verknüpfen
+        for subtask_data in subtasks_data:
+            Subtask.objects.create(ticket=ticket, **subtask_data)
+        
+        # AssignedTo erstellen und verknüpfen
+        for assigned in assigned_data:
+            Assigned.objects.create(ticket=ticket, **assigned)
+        
+        return ticket
+
 
 
 class ProfileSerializer(serializers.ModelSerializer):
