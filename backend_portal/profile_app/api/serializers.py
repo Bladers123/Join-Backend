@@ -19,8 +19,8 @@ class ContactSerializer(serializers.ModelSerializer):
 
 
 class ProfileSerializer(serializers.ModelSerializer):
-    ticket = TicketSerializer(many=True)  # Tickets als verschachtelte Objekte
-    contacts = ContactSerializer(many=True)  # Kontakte als verschachtelte Objekte
+    ticket = TicketSerializer(many=True)  
+    contacts = ContactSerializer(many=True)  
 
     class Meta:
         model = Profile
