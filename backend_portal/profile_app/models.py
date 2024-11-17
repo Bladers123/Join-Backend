@@ -18,6 +18,8 @@ class Contact(models.Model):
     name = models.CharField(max_length=100)
     email = models.EmailField()
     number = models.CharField(max_length=20)
+    backgroundColor = models.CharField(max_length=20, default="#000000")  # Standard-Hintergrundfarbe
+    isSelected = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.name}'s Contact"

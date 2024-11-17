@@ -15,7 +15,7 @@ class TicketSerializer(serializers.ModelSerializer):
 class ContactSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contact
-        fields = ['id', 'name', 'email', 'number']
+        fields = ['id', 'name', 'email', 'number', 'backgroundColor', 'isSelected']
 
 
 class ProfileSerializer(serializers.ModelSerializer):
