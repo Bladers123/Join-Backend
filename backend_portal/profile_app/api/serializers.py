@@ -4,13 +4,8 @@
 
 
 from rest_framework import serializers
-from ..models import Profile, Contact
-from tickets_app.models import Ticket
+from ..models import Assigned, Profile, Contact, Subtask, Ticket
 
-class TicketSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Ticket
-        fields = '__all__'
 
 class ContactSerializer(serializers.ModelSerializer):
     class Meta:
@@ -19,9 +14,30 @@ class ContactSerializer(serializers.ModelSerializer):
 
 
 class ProfileSerializer(serializers.ModelSerializer):
-    ticket = TicketSerializer(many=True)  
+    # ticket = TicketSerializer(many=True)  
     contacts = ContactSerializer(many=True)  
 
     class Meta:
         model = Profile
-        fields = ['user', 'ticket', 'contacts']
+        fields =  '__all__'
+
+
+from rest_framework import serializers
+
+class AssignedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Assigned
+        fields = '__all__'
+
+class SubtaskSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subtask
+        fields = '__all__'
+
+class TicketSerializer(serializers.ModelSerializer):
+    assigned_to = AssignedSerializer(many=True)
+    subtasks = SubtaskSerializer(many=True)
+
+    class Meta:
+        model = Ticket
+        fields = '__all__'
