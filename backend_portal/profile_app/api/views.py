@@ -141,9 +141,11 @@ class AssignedTicketsDetailView(APIView):
             return Response({"error": "Ticket not found"}, status=404)
 
         profile = Profile.objects.get(user=request.user)
-        profile.ticket.remove(ticket)
+        profile.tickets.remove(ticket)  # Korrektur hier
 
-        if not Profile.objects.filter(ticket=ticket).exists():
+        # Prüfen, ob kein anderes Profil mehr mit diesem Ticket verknüpft ist
+        if not Profile.objects.filter(tickets=ticket).exists():
             ticket.delete()
 
         return Response({"message": "Ticket deleted successfully"}, status=204)
+
