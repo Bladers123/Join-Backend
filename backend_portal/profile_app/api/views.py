@@ -123,6 +123,7 @@ class AssignedTicketsDetailView(APIView):
             return Response({"error": "Ticket not found"}, status=404)
 
     def put(self, request, pk):
+        # print("Raw request data:", request.data)
         try:
             ticket = Ticket.objects.get(pk=pk)
         except Ticket.DoesNotExist:

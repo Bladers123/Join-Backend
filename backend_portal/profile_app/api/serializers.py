@@ -13,14 +13,19 @@ class ContactSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'email', 'number', 'backgroundColor', 'isSelected']
 
 class AssignedSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)  # Optional, damit neue Einträge erstellt werden können
+
     class Meta:
         model = Assigned
         fields = ['id', 'name', 'backgroundColor']
 
 class SubtaskSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)  # Das `id`-Feld ist optional
+
     class Meta:
         model = Subtask
         fields = ['id', 'title', 'completed']
+
 
 class TicketSerializer(serializers.ModelSerializer):
     subtasks = SubtaskSerializer(many=True)  # Nested Serializer für Subtasks
@@ -32,44 +37,76 @@ class TicketSerializer(serializers.ModelSerializer):
             'id', 'title', 'description', 'dueDate', 'priority', 'category', 'progress', 'subtasks', 'assignedTo'
         ]
 
+    def validate_subtasks(self, value):
+        # print("Validating Subtasks:", value)  # Debug-Ausgabe
+
+        for subtask in value:
+            # Nur bei Updates das `id`-Feld überprüfen
+            if self.instance and 'id' not in subtask:
+                raise serializers.ValidationError("Each subtask must include an 'id' field.")
+        return value
+
+
     def create(self, validated_data):
-        # Subtasks und Assigned werden aus den Daten extrahiert
         subtasks_data = validated_data.pop('subtasks', [])
         assigned_data = validated_data.pop('assignedTo', [])
-        
+
         # Ticket erstellen
         ticket = Ticket.objects.create(**validated_data)
-        
+
         # Subtasks erstellen und verknüpfen
         for subtask_data in subtasks_data:
             Subtask.objects.create(ticket=ticket, **subtask_data)
-        
+
         # AssignedTo erstellen und verknüpfen
         for assigned_data in assigned_data:
             Assigned.objects.create(ticket=ticket, **assigned_data)
-        
+
         return ticket
+
     
     def update(self, instance, validated_data):
-    # Subtasks aktualisieren
+        # Subtasks aktualisieren
         if 'subtasks' in validated_data:
-            subtasks_data = validated_data.pop('subtasks')
-            # Entfernt alte Subtasks und fügt die neuen hinzu
-            instance.subtasks.set([Subtask.objects.get(id=subtask['id']) for subtask in subtasks_data])
+            subtasks_data = validated_data.pop('subtasks', [])
+            subtask_ids = []
+
+            for subtask_data in subtasks_data:
+                if 'id' in subtask_data:
+                    subtask_instance = Subtask.objects.get(id=subtask_data['id'])
+                    for key, value in subtask_data.items():
+                        setattr(subtask_instance, key, value)
+                    subtask_instance.save()
+                    subtask_ids.append(subtask_instance.id)
+                else:
+                    new_subtask = Subtask.objects.create(ticket=instance, **subtask_data)
+                    subtask_ids.append(new_subtask.id)
+
+            instance.subtasks.set(Subtask.objects.filter(id__in=subtask_ids))
 
         # AssignedTo aktualisieren
         if 'assignedTo' in validated_data:
-            assigned_to_data = validated_data.pop('assignedTo')
-            # Entfernt alte Zuweisungen und fügt die neuen hinzu
-            instance.assignedTo.set([Assigned.objects.get(id=assigned['id']) for assigned in assigned_to_data])
+            assigned_to_data = validated_data.pop('assignedTo', [])
+            assigned_instances = []
 
-        # Andere Felder aktualisieren
+            for assigned_data in assigned_to_data:
+                if 'id' in assigned_data:
+                    assigned_instance = Assigned.objects.get(id=assigned_data['id'])
+                    for key, value in assigned_data.items():
+                        setattr(assigned_instance, key, value)
+                    assigned_instance.save()
+                    assigned_instances.append(assigned_instance)
+                else:
+                    raise serializers.ValidationError({"assignedTo": "Each assigned object must include an 'id' field."})
+
+            instance.assignedTo.set(assigned_instances)
+
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-    
-        # Speichere die Änderungen
+
         instance.save()
         return instance
+
 
 
 
