@@ -49,6 +49,28 @@ class TicketSerializer(serializers.ModelSerializer):
             Assigned.objects.create(ticket=ticket, **assigned_data)
         
         return ticket
+    
+    def update(self, instance, validated_data):
+    # Subtasks aktualisieren
+        if 'subtasks' in validated_data:
+            subtasks_data = validated_data.pop('subtasks')
+            # Entfernt alte Subtasks und fügt die neuen hinzu
+            instance.subtasks.set([Subtask.objects.get(id=subtask['id']) for subtask in subtasks_data])
+
+        # AssignedTo aktualisieren
+        if 'assignedTo' in validated_data:
+            assigned_to_data = validated_data.pop('assignedTo')
+            # Entfernt alte Zuweisungen und fügt die neuen hinzu
+            instance.assignedTo.set([Assigned.objects.get(id=assigned['id']) for assigned in assigned_to_data])
+
+        # Andere Felder aktualisieren
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+    
+        # Speichere die Änderungen
+        instance.save()
+        return instance
+
 
 
 

@@ -18,7 +18,7 @@ class Contact(models.Model):
     name = models.CharField(max_length=100)
     email = models.EmailField()
     number = models.CharField(max_length=20)
-    backgroundColor = models.CharField(max_length=20, default="#000000")  # Standard-Hintergrundfarbe
+    backgroundColor = models.CharField(max_length=20)  # Standard-Hintergrundfarbe
     isSelected = models.BooleanField(default=False)
 
     def __str__(self):
@@ -32,7 +32,6 @@ class Ticket(models.Model):
     priority = models.CharField(max_length=50)
     category = models.CharField(max_length=255)
     progress = models.CharField(max_length=255)
-    # assignedTo = models.ManyToManyField('Assigned', related_name='assigned_contacts')
 
     def __str__(self):
         return self.title
