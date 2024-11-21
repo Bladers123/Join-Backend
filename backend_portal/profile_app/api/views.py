@@ -101,12 +101,16 @@ class AssignedTicketsView(APIView):
 
     def post(self, request):
         serializer = TicketSerializer(data=request.data)
+        print(request.data)  # Gibt die empfangenen Daten aus
+
         if serializer.is_valid():
             ticket = serializer.save()
             # Kontakt dem Profil des aktuellen Nutzers hinzufügen
             profile, created = Profile.objects.get_or_create(user=request.user)
             profile.tickets.add(ticket)  # Verknüpfen
             profile.save()  # Speichern
+            print(serializer.errors)  # Logge die Validierungsfehler
+
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
     

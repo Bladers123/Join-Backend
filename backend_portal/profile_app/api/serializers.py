@@ -15,12 +15,12 @@ class ContactSerializer(serializers.ModelSerializer):
 class AssignedSerializer(serializers.ModelSerializer):
     class Meta:
         model = Assigned
-        fields = ['name', 'backgroundColor']
+        fields = ['id', 'name', 'backgroundColor']
 
 class SubtaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subtask
-        fields = ['title', 'completed', 'subtask_id']
+        fields = ['id', 'title', 'completed']
 
 class TicketSerializer(serializers.ModelSerializer):
     subtasks = SubtaskSerializer(many=True)  # Nested Serializer für Subtasks
@@ -45,8 +45,8 @@ class TicketSerializer(serializers.ModelSerializer):
             Subtask.objects.create(ticket=ticket, **subtask_data)
         
         # AssignedTo erstellen und verknüpfen
-        for assigned in assigned_data:
-            Assigned.objects.create(ticket=ticket, **assigned)
+        for assigned_data in assigned_data:
+            Assigned.objects.create(ticket=ticket, **assigned_data)
         
         return ticket
 
