@@ -38,13 +38,12 @@ class TicketSerializer(serializers.ModelSerializer):
         ]
 
     def validate_subtasks(self, value):
-        # print("Validating Subtasks:", value)  # Debug-Ausgabe
-
         for subtask in value:
-            # Nur bei Updates das `id`-Feld überprüfen
-            if self.instance and 'id' not in subtask:
-                raise serializers.ValidationError("Each subtask must include an 'id' field.")
+            # Bestehende Subtasks müssen eine ID haben, neue Subtasks nicht
+            if 'id' in subtask and not isinstance(subtask['id'], int):
+                raise serializers.ValidationError("Subtask 'id' must be an integer.")
         return value
+
 
 
     def create(self, validated_data):
@@ -72,40 +71,46 @@ class TicketSerializer(serializers.ModelSerializer):
             subtask_ids = []
 
             for subtask_data in subtasks_data:
-                if 'id' in subtask_data:
+                if 'id' in subtask_data:  # Bestehender Subtask
                     subtask_instance = Subtask.objects.get(id=subtask_data['id'])
                     for key, value in subtask_data.items():
                         setattr(subtask_instance, key, value)
                     subtask_instance.save()
                     subtask_ids.append(subtask_instance.id)
-                else:
+                else:  # Neuer Subtask
                     new_subtask = Subtask.objects.create(ticket=instance, **subtask_data)
                     subtask_ids.append(new_subtask.id)
 
-            instance.subtasks.set(Subtask.objects.filter(id__in=subtask_ids))
+            instance.subtasks.exclude(id__in=subtask_ids).delete()
 
         # AssignedTo aktualisieren
         if 'assignedTo' in validated_data:
-            assigned_to_data = validated_data.pop('assignedTo', [])
+            assigned_data = validated_data.pop('assignedTo', [])
             assigned_instances = []
 
-            for assigned_data in assigned_to_data:
-                if 'id' in assigned_data:
-                    assigned_instance = Assigned.objects.get(id=assigned_data['id'])
-                    for key, value in assigned_data.items():
+            for assigned in assigned_data:
+                if 'id' in assigned:  # Bestehender Assigned
+                    assigned_instance = Assigned.objects.get(id=assigned['id'])
+                    for key, value in assigned.items():
                         setattr(assigned_instance, key, value)
                     assigned_instance.save()
                     assigned_instances.append(assigned_instance)
-                else:
-                    raise serializers.ValidationError({"assignedTo": "Each assigned object must include an 'id' field."})
+                else:  # Neuer Assigned
+                    new_assigned = Assigned.objects.create(ticket=instance, **assigned)  # Ticket setzen
+                    assigned_instances.append(new_assigned)
 
             instance.assignedTo.set(assigned_instances)
 
+        # Andere Felder aktualisieren
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
         instance.save()
         return instance
+
+
+
+
 
 
 
