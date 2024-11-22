@@ -81,25 +81,33 @@ class TicketSerializer(serializers.ModelSerializer):
                     new_subtask = Subtask.objects.create(ticket=instance, **subtask_data)
                     subtask_ids.append(new_subtask.id)
 
+            # Entferne Subtasks, die nicht mehr benötigt werden
             instance.subtasks.exclude(id__in=subtask_ids).delete()
 
         # AssignedTo aktualisieren
         if 'assignedTo' in validated_data:
             assigned_data = validated_data.pop('assignedTo', [])
-            assigned_instances = []
+            assigned_ids = []
 
             for assigned in assigned_data:
                 if 'id' in assigned:  # Bestehender Assigned
-                    assigned_instance = Assigned.objects.get(id=assigned['id'])
-                    for key, value in assigned.items():
-                        setattr(assigned_instance, key, value)
-                    assigned_instance.save()
-                    assigned_instances.append(assigned_instance)
+                    try:
+                        assigned_instance = Assigned.objects.get(id=assigned['id'])
+                        for key, value in assigned.items():
+                            setattr(assigned_instance, key, value)
+                        assigned_instance.save()
+                        assigned_ids.append(assigned_instance.id)
+                    except Assigned.DoesNotExist:
+                        # Falls die ID nicht existiert, erstelle einen neuen Eintrag
+                        new_assigned = Assigned.objects.create(ticket=instance, **assigned)
+                        assigned_ids.append(new_assigned.id)
                 else:  # Neuer Assigned
-                    new_assigned = Assigned.objects.create(ticket=instance, **assigned)  # Ticket setzen
-                    assigned_instances.append(new_assigned)
+                    new_assigned = Assigned.objects.create(ticket=instance, **assigned)
+                    assigned_ids.append(new_assigned.id)
 
-            instance.assignedTo.set(assigned_instances)
+            # Entferne alte Assigned-Einträge, die nicht mehr benötigt werden
+            instance.assignedTo.exclude(id__in=assigned_ids).delete()
+
 
         # Andere Felder aktualisieren
         for attr, value in validated_data.items():
@@ -107,6 +115,7 @@ class TicketSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
+
 
 
 
