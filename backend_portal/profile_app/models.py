@@ -25,7 +25,7 @@ class Task(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     dueDate = models.DateField(blank=True, null=True)
-    priority = models.CharField(max_length=50)
+    priority = models.CharField(max_length=50, default='Medium')
     category = models.CharField(max_length=255)
     progress = models.CharField(max_length=255)
 
