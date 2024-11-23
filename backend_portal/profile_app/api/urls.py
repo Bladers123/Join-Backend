@@ -1,12 +1,13 @@
-# profile_app/api/urls.py
-
 from django.urls import path
-from .views import AssignedContactDetailView, AssignedTasksDetailView, AssignedTasksView, ProfileDetailView, AssigendContactsView
+from .views import ContactDetailView, TaskDetailView, TasksView, ProfileDetailView, ContactsView, ProfilesView, SubtasksView, SubtaskDetailView
 
 urlpatterns = [
-    path('profile/', ProfileDetailView.as_view(), name='profile-detail'),
-    path('contacts/', AssigendContactsView.as_view(), name='assigned-contacts'),
-    path('contacts/<int:pk>/', AssignedContactDetailView.as_view(), name='contact-detail'),
-    path('tasks/', AssignedTasksView.as_view(), name='tasks'),
-    path('tasks/<int:pk>/', AssignedTasksDetailView.as_view(), name='task-detail')
+    path('profiles/', ProfilesView.as_view(), name='profiles'),
+    path('profiles/<int:pk>/', ProfileDetailView.as_view(), name='profile-detail'),
+    path('contacts/', ContactsView.as_view(), name='assigned-contacts'),
+    path('contacts/<int:pk>/', ContactDetailView.as_view(), name='contact-detail'),
+    path('tasks/', TasksView.as_view(), name='tasks'),
+    path('tasks/<int:pk>/', TaskDetailView.as_view(), name='task-detail'),
+    path('subtasks/', SubtasksView.as_view(), name='subtasks'),
+    path('subtasks/<int:pk>/', SubtaskDetailView.as_view(), name='subtask-detail'),
 ]

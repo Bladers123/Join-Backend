@@ -1,58 +1,42 @@
-# serializers.py
-
-
-
-
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from profile_app.models import Profile
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from rest_framework.authtoken.models import Token
 from django.db import transaction
 
 
 
 class RegisterSerializer(serializers.ModelSerializer):
-    username = serializers.CharField()  # Überschreibt das username-Feld mit eigener Validierung
-
+    username = serializers.CharField()
     class Meta:
         model = User
         fields = ['username', 'email', 'password']
         extra_kwargs = {'password': {'write_only': True}}
 
     def validate_username(self, value):
-        # Erlaubt Leerzeichen im Benutzernamen, entfernt führende und nachgestellte Leerzeichen
         value = value.strip()
-        
-        # Benutzername darf nicht leer sein
         if not value:
             raise serializers.ValidationError("Username shouldn't be empty.")
-        
-        # Prüfen, ob der Benutzername bereits existiert
         if User.objects.filter(username=value).exists():
             raise serializers.ValidationError("This username is already taken.")
         return value
 
     
     def validate_email(self, value):
-        """
-        Prüft, ob die E-Mail-Adresse bereits verwendet wird.
-        """
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError("This e-mail address is already in use.")
         return value
-
-    from django.db import transaction
+    
 
     def create(self, validated_data):
-        with transaction.atomic():  # Startet eine Datenbanktransaktion
+        with transaction.atomic():
             user = User.objects.create_user(
                 username=validated_data['username'],
                 email=validated_data['email'],
                 password=validated_data['password']
             )
-            Profile.objects.create(user=user)  # Profil für den Benutzer erstellen
+            Profile.objects.create(user=user)
         return user
 
 
@@ -63,22 +47,17 @@ class LoginSerializer(serializers.Serializer):
     def validate(self, data):
         email = data.get("email")
         password = data.get("password")
-
         try:
-            # Benutzer anhand der E-Mail finden
             user = User.objects.get(email=email)
         except User.DoesNotExist:
             raise serializers.ValidationError("Invalid email or password.")
-        
-        # Authentifizieren mit Benutzername (von user) und Passwort
         user = authenticate(username=user.username, password=password)
         if user is None:
             raise serializers.ValidationError("Invalid email or password.")
-        
         data['user'] = user
         return data
     
 class UserOverviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'first_name', 'last_name', 'email', 'is_staff', 'is_superuser', 'is_active', 'last_login', 'date_joined']
+        fields = '__all__'

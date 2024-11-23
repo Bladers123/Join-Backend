@@ -1,38 +1,38 @@
 # profile_app/api/views.py
 
-
-
-
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.exceptions import NotFound
-from ..models import Contact, Profile, Task
-from .serializers import ProfileSerializer, ContactSerializer, TaskSerializer
+from ..models import Contact, Profile, Subtask, Task
+from .serializers import ProfileSerializer, ContactSerializer, SubtaskSerializer, TaskSerializer
+
+
+
+class ProfilesView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        profiles = Profile.objects.all()
+        serializer = ProfileSerializer(profiles, many=True)
+        return Response(serializer.data, status=200)
+
 
 class ProfileDetailView(APIView):
     permission_classes = [IsAuthenticated]
+    def get(self, request, pk):
+        try:
+            profile = Profile.objects.get(pk=pk)
+            serializer = ProfileSerializer(profile)
+            return Response(serializer.data, status=200)
+        except Profile.DoesNotExist:
+            return Response({"error": "Profile not found"}, status=404)
+                         
 
-    def get(self, request):
-        profile, created = Profile.objects.get_or_create(user=request.user)
-        serializer = ProfileSerializer(profile)
-        return Response(serializer.data)
-
-
-
-
-
-class AssigendContactsView(APIView):
+class ContactsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # Profil des aktuellen Nutzers abrufen oder erstellen
         profile, created = Profile.objects.get_or_create(user=request.user)
-
-        # Kontakte des Profils abrufen
         contacts = profile.contacts.all()
-        # Kontakte serialisieren
         serializer = ContactSerializer(contacts, many=True)
         return Response(serializer.data)
 
@@ -41,18 +41,15 @@ class AssigendContactsView(APIView):
         serializer = ContactSerializer(data=request.data)
         if serializer.is_valid():
             contact = serializer.save()
-            # Kontakt dem Profil des aktuellen Nutzers hinzufügen
             profile, created = Profile.objects.get_or_create(user=request.user)
-            profile.contacts.add(contact)  # Verknüpfen
-            profile.save()  # Speichern
+            profile.contacts.add(contact) 
+            profile.save() 
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
     
 
-
-class AssignedContactDetailView(APIView):
+class ContactDetailView(APIView):
     permission_classes = [IsAuthenticated]
-
     def get(self, request, pk):
         try:
             contact = Contact.objects.get(pk=pk)
@@ -67,7 +64,6 @@ class AssignedContactDetailView(APIView):
             contact = Contact.objects.get(pk=pk)
         except Contact.DoesNotExist:
             return Response({"error": "Contact not found"}, status=404)
-        
         serializer = ContactSerializer(contact, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -80,42 +76,36 @@ class AssignedContactDetailView(APIView):
             contact = Contact.objects.get(pk=pk)
         except Contact.DoesNotExist:
             return Response({"error": "Contact not found"}, status=404)
-
         profile = Profile.objects.get(user=request.user)
         profile.contacts.remove(contact)
-
         if not Profile.objects.filter(contacts=contact).exists():
             contact.delete()
-
         return Response({"message": "Contact deleted successfully"}, status=204)
 
 
     
 
-class AssignedTasksView(APIView):
+class TasksView(APIView):
     permission_classes = [IsAuthenticated]
-
     def get(self, request):
         profile = Profile.objects.get(user=request.user)
-        tasks = profile.tasks.all()  # Zugriff auf das ManyToManyField 'task'
-        serializer = TaskSerializer(tasks, many=True)  # Verwende den passenden Serializer
+        tasks = profile.tasks.all()
+        serializer = TaskSerializer(tasks, many=True)
         return Response(serializer.data)
 
     def post(self, request):
         serializer = TaskSerializer(data=request.data)
         if serializer.is_valid():
             task = serializer.save()
-            # Kontakt dem Profil des aktuellen Nutzers hinzufügen
             profile, created = Profile.objects.get_or_create(user=request.user)
-            profile.tasks.add(task)  # Verknüpfen
-            profile.save()  # Speichern
+            profile.tasks.add(task) 
+            profile.save()
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
     
 
-class AssignedTasksDetailView(APIView):
+class TaskDetailView(APIView):
     permission_classes = [IsAuthenticated]
-
     def get(self, request, pk):
         try:
             task = Task.objects.get(pk=pk)
@@ -125,7 +115,6 @@ class AssignedTasksDetailView(APIView):
             return Response({"error": "task not found"}, status=404)
 
     def put(self, request, pk):
-        # print("Raw request data:", request.data)
         try:
             task = Task.objects.get(pk=pk)
         except Task.DoesNotExist:
@@ -142,13 +131,46 @@ class AssignedTasksDetailView(APIView):
             task = Task.objects.get(pk=pk)
         except Task.DoesNotExist:
             return Response({"error": "task not found"}, status=404)
-
         profile = Profile.objects.get(user=request.user)
-        profile.tasks.remove(task)  # Korrektur hier
-
-        # Prüfen, ob kein anderes Profil mehr mit diesem task verknüpft ist
+        profile.tasks.remove(task)
         if not Profile.objects.filter(tasks=task).exists():
             task.delete()
-
         return Response({"message": "task deleted successfully"}, status=204)
 
+
+class SubtasksView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            profile = Profile.objects.get(user=request.user)
+            tasks = profile.tasks.all()
+            result = []
+            for task in tasks:
+                subtasks = task.subtasks.all()
+                subtasks_serializer = SubtaskSerializer(subtasks, many=True)
+                result.append({
+                    "task_id": task.id,
+                    "task_title": task.title,
+                    "subtasks": subtasks_serializer.data
+                })
+            return Response(result, status=200)
+        except Profile.DoesNotExist:
+            return Response({"error": "Profile not found"}, status=404)
+
+    
+class SubtaskDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, pk):
+        try:
+            profile = Profile.objects.get(user=request.user)
+            subtask = Subtask.objects.get(pk=pk)
+            if not subtask.task in profile.tasks.all():
+                return Response({"error": "Permission denied"}, status=403)
+            serializer = SubtaskSerializer(subtask)
+            return Response(serializer.data, status=200)
+        except Profile.DoesNotExist:
+            return Response({"error": "Profile not found"}, status=404)
+        except Subtask.DoesNotExist:
+            return Response({"error": "Subtask not found"}, status=404)
+  

@@ -1,7 +1,3 @@
-# profile_app/api/models.py
-
-
-
 from django.contrib.auth.models import User
 from django.db import models
 
@@ -18,7 +14,7 @@ class Contact(models.Model):
     name = models.CharField(max_length=100)
     email = models.EmailField()
     number = models.CharField(max_length=20)
-    backgroundColor = models.CharField(max_length=20)  # Standard-Hintergrundfarbe
+    backgroundColor = models.CharField(max_length=20) 
     isSelected = models.BooleanField(default=False)
 
     def __str__(self):
@@ -40,8 +36,8 @@ class Task(models.Model):
 
 class Assigned(models.Model):
     task = models.ForeignKey(Task, related_name='assignedTo', on_delete=models.CASCADE)
-    name = models.CharField(max_length=255)  # Name der zugewiesenen Person
-    backgroundColor = models.CharField(max_length=20, blank=True, null=True)  # Hintergrundfarbe oder anderes Attribut (z. B. Hex-Farbcode)
+    name = models.CharField(max_length=255) 
+    backgroundColor = models.CharField(max_length=20, blank=True, null=True) 
 
     def __str__(self):
         return self.name
@@ -50,7 +46,6 @@ class Subtask(models.Model):
     task = models.ForeignKey(Task, related_name='subtasks', on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
     completed = models.BooleanField(default=False)
-
 
     def __str__(self):
         return f"{self.title} ({'Completed' if self.completed else 'Pending'})"
