@@ -9,7 +9,7 @@ from profile_app.models import Profile
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
-
+from django.db import transaction
 
 
 
@@ -43,14 +43,16 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("This e-mail address is already in use.")
         return value
 
+    from django.db import transaction
+
     def create(self, validated_data):
-        # Benutzer erstellen, Leerzeichen im Benutzernamen sind erlaubt
-        user = User.objects.create_user(
-            username=validated_data['username'],
-            email=validated_data['email'],
-            password=validated_data['password']
-        )
-        Profile.objects.create(user=user)  # Profil für den Benutzer erstellen
+        with transaction.atomic():  # Startet eine Datenbanktransaktion
+            user = User.objects.create_user(
+                username=validated_data['username'],
+                email=validated_data['email'],
+                password=validated_data['password']
+            )
+            Profile.objects.create(user=user)  # Profil für den Benutzer erstellen
         return user
 
 

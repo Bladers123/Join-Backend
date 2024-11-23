@@ -7,7 +7,7 @@ from django.db import models
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
-    tickets = models.ManyToManyField('Ticket', blank=True, related_name="tickets") 
+    tasks = models.ManyToManyField('Task', blank=True, related_name="tasks") 
     contacts = models.ManyToManyField('Contact', blank=True, related_name="contacts") 
 
     def __str__(self):
@@ -25,7 +25,7 @@ class Contact(models.Model):
         return f"{self.name}'s Contact"
     
 
-class Ticket(models.Model):
+class Task(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     dueDate = models.DateField(blank=True, null=True)
@@ -39,7 +39,7 @@ class Ticket(models.Model):
 
 
 class Assigned(models.Model):
-    ticket = models.ForeignKey(Ticket, related_name='assignedTo', on_delete=models.CASCADE)
+    task = models.ForeignKey(Task, related_name='assignedTo', on_delete=models.CASCADE)
     name = models.CharField(max_length=255)  # Name der zugewiesenen Person
     backgroundColor = models.CharField(max_length=20, blank=True, null=True)  # Hintergrundfarbe oder anderes Attribut (z. B. Hex-Farbcode)
 
@@ -47,7 +47,7 @@ class Assigned(models.Model):
         return self.name
     
 class Subtask(models.Model):
-    ticket = models.ForeignKey(Ticket, related_name='subtasks', on_delete=models.CASCADE)
+    task = models.ForeignKey(Task, related_name='subtasks', on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
     completed = models.BooleanField(default=False)
 

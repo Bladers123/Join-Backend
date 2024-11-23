@@ -4,7 +4,7 @@
 
 
 from rest_framework import serializers
-from ..models import Assigned, Profile, Contact, Subtask, Ticket
+from ..models import Assigned, Profile, Contact, Subtask, Task
 
 
 class ContactSerializer(serializers.ModelSerializer):
@@ -27,22 +27,28 @@ class SubtaskSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'completed']
 
 
-class TicketSerializer(serializers.ModelSerializer):
+class TaskSerializer(serializers.ModelSerializer):
     subtasks = SubtaskSerializer(many=True)  # Nested Serializer für Subtasks
     assignedTo = AssignedSerializer(many=True)  # Nested Serializer für AssignedTo
 
     class Meta:
-        model = Ticket
+        model = Task
         fields = [
             'id', 'title', 'description', 'dueDate', 'priority', 'category', 'progress', 'subtasks', 'assignedTo'
         ]
 
     def validate_subtasks(self, value):
         for subtask in value:
-            # Bestehende Subtasks müssen eine ID haben, neue Subtasks nicht
             if 'id' in subtask and not isinstance(subtask['id'], int):
                 raise serializers.ValidationError("Subtask 'id' must be an integer.")
         return value
+
+    def validate_assignedTo(self, value):
+        for assigned in value:
+            if 'id' in assigned and not isinstance(assigned['id'], int):
+                raise serializers.ValidationError("AssignedTo 'id' must be an integer.")
+        return value
+
 
 
 
@@ -50,18 +56,18 @@ class TicketSerializer(serializers.ModelSerializer):
         subtasks_data = validated_data.pop('subtasks', [])
         assigned_data = validated_data.pop('assignedTo', [])
 
-        # Ticket erstellen
-        ticket = Ticket.objects.create(**validated_data)
+        # Task erstellen
+        task = Task.objects.create(**validated_data)
 
         # Subtasks erstellen und verknüpfen
         for subtask_data in subtasks_data:
-            Subtask.objects.create(ticket=ticket, **subtask_data)
+            Subtask.objects.create(task=task, **subtask_data)
 
         # AssignedTo erstellen und verknüpfen
         for assigned_data in assigned_data:
-            Assigned.objects.create(ticket=ticket, **assigned_data)
+            Assigned.objects.create(task=task, **assigned_data)
 
-        return ticket
+        return task
 
     
     def update(self, instance, validated_data):
@@ -78,7 +84,7 @@ class TicketSerializer(serializers.ModelSerializer):
                     subtask_instance.save()
                     subtask_ids.append(subtask_instance.id)
                 else:  # Neuer Subtask
-                    new_subtask = Subtask.objects.create(ticket=instance, **subtask_data)
+                    new_subtask = Subtask.objects.create(task=instance, **subtask_data)
                     subtask_ids.append(new_subtask.id)
 
             # Entferne Subtasks, die nicht mehr benötigt werden
@@ -99,10 +105,10 @@ class TicketSerializer(serializers.ModelSerializer):
                         assigned_ids.append(assigned_instance.id)
                     except Assigned.DoesNotExist:
                         # Falls die ID nicht existiert, erstelle einen neuen Eintrag
-                        new_assigned = Assigned.objects.create(ticket=instance, **assigned)
+                        new_assigned = Assigned.objects.create(task=instance, **assigned)
                         assigned_ids.append(new_assigned.id)
                 else:  # Neuer Assigned
-                    new_assigned = Assigned.objects.create(ticket=instance, **assigned)
+                    new_assigned = Assigned.objects.create(task=instance, **assigned)
                     assigned_ids.append(new_assigned.id)
 
             # Entferne alte Assigned-Einträge, die nicht mehr benötigt werden
@@ -126,8 +132,8 @@ class TicketSerializer(serializers.ModelSerializer):
 
 
 class ProfileSerializer(serializers.ModelSerializer):
-    tickets = TicketSerializer(many=True)  
-    contacts = ContactSerializer(many=True)  
+    tasks = TaskSerializer(many=True, required=False)  
+    contacts = ContactSerializer(many=True, required=False)  
 
     class Meta:
         model = Profile

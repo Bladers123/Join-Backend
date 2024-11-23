@@ -8,8 +8,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import NotFound
-from ..models import Contact, Profile, Ticket
-from .serializers import ProfileSerializer, ContactSerializer, TicketSerializer
+from ..models import Contact, Profile, Task
+from .serializers import ProfileSerializer, ContactSerializer, TaskSerializer
 
 class ProfileDetailView(APIView):
     permission_classes = [IsAuthenticated]
@@ -27,13 +27,15 @@ class AssigendContactsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # Profil des aktuellen Nutzers abrufen
-        profile = Profile.objects.get(user=request.user)
+        # Profil des aktuellen Nutzers abrufen oder erstellen
+        profile, created = Profile.objects.get_or_create(user=request.user)
+
         # Kontakte des Profils abrufen
         contacts = profile.contacts.all()
         # Kontakte serialisieren
         serializer = ContactSerializer(contacts, many=True)
         return Response(serializer.data)
+
 
     def post(self, request):
         serializer = ContactSerializer(data=request.data)
@@ -90,46 +92,46 @@ class AssignedContactDetailView(APIView):
 
     
 
-class AssignedTicketsView(APIView):
+class AssignedTasksView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         profile = Profile.objects.get(user=request.user)
-        tickets = profile.tickets.all()  # Zugriff auf das ManyToManyField 'ticket'
-        serializer = TicketSerializer(tickets, many=True)  # Verwende den passenden Serializer
+        tasks = profile.tasks.all()  # Zugriff auf das ManyToManyField 'task'
+        serializer = TaskSerializer(tasks, many=True)  # Verwende den passenden Serializer
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = TicketSerializer(data=request.data)
+        serializer = TaskSerializer(data=request.data)
         if serializer.is_valid():
-            ticket = serializer.save()
+            task = serializer.save()
             # Kontakt dem Profil des aktuellen Nutzers hinzufügen
             profile, created = Profile.objects.get_or_create(user=request.user)
-            profile.tickets.add(ticket)  # Verknüpfen
+            profile.tasks.add(task)  # Verknüpfen
             profile.save()  # Speichern
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
     
 
-class AssignedTicketsDetailView(APIView):
+class AssignedTasksDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         try:
-            ticket = Ticket.objects.get(pk=pk)
-            serializer = TicketSerializer(ticket)
+            task = Task.objects.get(pk=pk)
+            serializer = TaskSerializer(task)
             return Response(serializer.data)
-        except Ticket.DoesNotExist:
-            return Response({"error": "Ticket not found"}, status=404)
+        except Task.DoesNotExist:
+            return Response({"error": "task not found"}, status=404)
 
     def put(self, request, pk):
         # print("Raw request data:", request.data)
         try:
-            ticket = Ticket.objects.get(pk=pk)
-        except Ticket.DoesNotExist:
-            return Response({"error": "Ticket not found"}, status=404)
+            task = Task.objects.get(pk=pk)
+        except Task.DoesNotExist:
+            return Response({"error": "task not found"}, status=404)
 
-        serializer = TicketSerializer(ticket, data=request.data, partial=True)
+        serializer = TaskSerializer(task, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=200)
@@ -137,16 +139,16 @@ class AssignedTicketsDetailView(APIView):
 
     def delete(self, request, pk):
         try:
-            ticket = Ticket.objects.get(pk=pk)
-        except Ticket.DoesNotExist:
-            return Response({"error": "Ticket not found"}, status=404)
+            task = Task.objects.get(pk=pk)
+        except Task.DoesNotExist:
+            return Response({"error": "task not found"}, status=404)
 
         profile = Profile.objects.get(user=request.user)
-        profile.tickets.remove(ticket)  # Korrektur hier
+        profile.tasks.remove(task)  # Korrektur hier
 
-        # Prüfen, ob kein anderes Profil mehr mit diesem Ticket verknüpft ist
-        if not Profile.objects.filter(tickets=ticket).exists():
-            ticket.delete()
+        # Prüfen, ob kein anderes Profil mehr mit diesem task verknüpft ist
+        if not Profile.objects.filter(tasks=task).exists():
+            task.delete()
 
-        return Response({"message": "Ticket deleted successfully"}, status=204)
+        return Response({"message": "task deleted successfully"}, status=204)
 
