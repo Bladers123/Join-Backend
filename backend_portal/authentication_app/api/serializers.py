@@ -40,6 +40,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
 
 
+
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
@@ -56,6 +57,8 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError("Invalid email or password.")
         data['user'] = user
         return data
+    
+
     
 class UserOverviewSerializer(serializers.ModelSerializer):
     class Meta:
