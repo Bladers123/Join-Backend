@@ -2,6 +2,8 @@
 ## Diese Anleitung beschreibt die Schritte zur Installation und Konfiguration des Projekts mit Python 3.12.7.
 
 ## Installation und Einrichtung
+  Lade dir VS-Code herunter und es das Programm und öffne über VS-Code das Projekt (Join-Backend). Öffne das Terminal.
+
 
 ### - Python-Version überprüfen
   Stelle sicher, dass Python 3.12.7 installiert ist:
@@ -35,6 +37,9 @@
   - Führe die Migrationen aus, um die Tabellen in der Datenbank zu erstellen:
   **python manage.py migrate**
 
+### - Superuser erstellen
+  - Erstelle einen superuser:
+  **python manage.py createsuperuser** 
   
 ### - Server starten
   Navigiere in das Projektverzeichnis und starte den Server:
