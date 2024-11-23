@@ -35,6 +35,9 @@
   - Führe die Migrationen aus, um die Tabellen in der Datenbank zu erstellen:
   **python manage.py migrate**
 
+### - Superuser erstellen
+  - Erstelle einen superuser:
+  **python manage.py createsuperuser** 
   
 ### - Server starten
   Navigiere in das Projektverzeichnis und starte den Server:
